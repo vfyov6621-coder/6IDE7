@@ -1,19 +1,21 @@
 //! 6IDE7 - Visual Block Programming IDE
 //!
-//! Main application entry point.
+//! Main application entry point with full drag-and-drop and connection support.
 
 use druid::{
-    AppLauncher, Color, Data, Env, Event, EventCtx, LocalizedString, Menu, MenuItem,
-    PlatformError, Point, Size, Widget, WidgetExt, WindowDesc, WindowState,
+    AppLauncher, Data, Env, Event, EventCtx, LocalizedString, Menu, MenuItem,
+    PlatformError, Point, Size, Widget, WidgetExt, WindowDesc,
 };
 use ide_ui::{
     theme::apply_theme,
-    canvas::{Canvas, CanvasState},
+    canvas::{Canvas, CanvasState, DragState},
     toolbar::{Toolbar, ToolbarState, Tool},
-    output::{OutputPanel, OutputState, OutputType},
+    output::{OutputPanel, OutputState},
     sidebar::{Sidebar, SidebarState, SidebarPanel},
     settings::{SettingsDialog, SettingsState, AppSettings},
-    blocks::BlockData,
+    blocks::{BlockData, BlockLibrary, BlockDefinition},
+    graph::ConnectionType,
+    types::PortId,
     widgets::*,
 };
 
@@ -32,35 +34,39 @@ impl Default for AppState {
     fn default() -> Self {
         let mut canvas = CanvasState::default();
         
-        // Add some demo blocks
+        // Add demo blocks
         canvas.blocks.push_back(
-            BlockData::new("demo_print", "Print", "io")
+            BlockData::new("start", "Start", "control")
                 .with_position(100.0, 100.0)
-                .with_input("value")
+                .with_exec_output("exec", "Next")
         );
         
         canvas.blocks.push_back(
-            BlockData::new("demo_var", "Variable", "data")
-                .with_position(100.0, 250.0)
-                .with_input("value")
-                .with_output("result")
+            BlockData::new("print_demo", "Print", "io")
+                .with_position(350.0, 80.0)
+                .with_exec_input("exec", "Exec")
+                .with_input("value", "Value", ide_ui::types::DataType::Any)
+                .with_exec_output("next", "Next")
         );
         
         canvas.blocks.push_back(
-            BlockData::new("demo_add", "Add", "math")
-                .with_position(350.0, 150.0)
-                .with_input("a")
-                .with_input("b")
-                .with_output("result")
+            BlockData::new("add_demo", "Add", "math")
+                .with_position(200.0, 250.0)
+                .with_input("a", "A", ide_ui::types::DataType::Integer)
+                .with_input("b", "B", ide_ui::types::DataType::Integer)
+                .with_output("result", "Result", ide_ui::types::DataType::Integer)
         );
         
         canvas.blocks.push_back(
-            BlockData::new("demo_if", "If", "control")
-                .with_position(350.0, 300.0)
-                .with_input("condition")
-                .with_output("then")
-                .with_size(160.0, 140.0)
+            BlockData::new("var_demo", "Variable", "data")
+                .with_position(200.0, 400.0)
+                .with_input("value", "Value", ide_ui::types::DataType::Any)
+                .with_output("result", "Result", ide_ui::types::DataType::Any)
         );
+        
+        // Expand some categories by default
+        canvas.sidebar_state.expanded_categories.insert("io".to_string());
+        canvas.sidebar_state.expanded_categories.insert("math".to_string());
         
         Self {
             canvas,
@@ -94,18 +100,27 @@ impl Widget<AppState> for IdeApp {
                     ctx.set_handled();
                 }
                 (druid::KeyModifiers::CONTROL, druid::KbKey::Character(ref c)) if c == "z" => {
-                    // Undo
+                    // Undo (future implementation)
                     ctx.set_handled();
                 }
                 (druid::KeyModifiers::CONTROL, druid::KbKey::Character(ref c)) if c == "y" => {
-                    // Redo
+                    // Redo (future implementation)
                     ctx.set_handled();
                 }
-                (_, druid::KbKey::Delete) => {
+                (druid::KeyModifiers::CONTROL, druid::KbKey::Character(ref c)) if c == "g" => {
+                    // Toggle grid
+                    data.canvas.grid_visible = !data.canvas.grid_visible;
+                    ctx.request_paint();
+                    ctx.set_handled();
+                }
+                (druid::KeyModifiers::NONE, druid::KbKey::Delete) => {
                     // Delete selected block
-                    if let Some(idx) = data.canvas.selected_block {
-                        data.canvas.blocks.remove(idx);
-                        data.canvas.selected_block = None;
+                    if let Some(block_id) = &data.canvas.selected_block.clone() {
+                        let block_name = data.canvas.get_block(block_id)
+                            .map(|b| b.name.clone())
+                            .unwrap_or_default();
+                        data.canvas.remove_block(block_id);
+                        data.output.print(format!("Deleted block: {}", block_name));
                         ctx.request_paint();
                     }
                     ctx.set_handled();
@@ -124,6 +139,19 @@ impl Widget<AppState> for IdeApp {
                 }
                 _ => {}
             }
+        }
+        
+        // Handle sidebar block drag
+        if data.sidebar.is_dragging_block {
+            if let Some(block_type) = &data.sidebar.hovered_block_type.clone() {
+                if let Some(definition) = BlockLibrary::get_definition(block_type) {
+                    data.canvas.drag_state = DragState::NewBlock {
+                        definition,
+                        offset: Point::ZERO,
+                    };
+                }
+            }
+            data.sidebar.is_dragging_block = false;
         }
     }
 
@@ -183,6 +211,23 @@ fn build_ui() -> impl Widget<AppState> {
         .min_sizes(44.0, 200.0)
         .padding(0.0)
         .expand()
+        .controller(IdeAppController)
+}
+
+/// Controller for handling app-level events
+struct IdeAppController;
+
+impl druid::widget::Controller<AppState, impl Widget<AppState>> for IdeAppController {
+    fn event(
+        &mut self,
+        child: &mut impl Widget<AppState>,
+        ctx: &mut EventCtx,
+        event: &Event,
+        data: &mut AppState,
+        env: &Env,
+    ) {
+        child.event(ctx, event, data, env);
+    }
 }
 
 /// Build the application menu
@@ -193,7 +238,6 @@ fn build_menu<T: Data>() -> Menu<T> {
     let mut file_menu = Menu::new(LocalizedString::new("File"));
     file_menu = file_menu.entry(
         MenuItem::new(LocalizedString::new("New Project"))
-            .shortcut(druid::Command::new(druid::commands::NEW_FILE, ()))
             .hotkey(druid::RawMods::Ctrl, "n")
     );
     file_menu = file_menu.entry(
@@ -244,7 +288,6 @@ fn build_menu<T: Data>() -> Menu<T> {
     edit_menu = edit_menu.separator();
     edit_menu = edit_menu.entry(
         MenuItem::new(LocalizedString::new("Delete"))
-            .hotkey(druid::RawMods::None, druid::KbKey::Delete.into())
     );
     edit_menu = edit_menu.entry(
         MenuItem::new(LocalizedString::new("Select All"))
@@ -258,6 +301,10 @@ fn build_menu<T: Data>() -> Menu<T> {
         MenuItem::new(LocalizedString::new("Toggle Grid"))
             .hotkey(druid::RawMods::Ctrl, "g")
     );
+    view_menu = view_menu.entry(
+        MenuItem::new(LocalizedString::new("Snap to Grid"))
+    );
+    view_menu = view_menu.separator();
     view_menu = view_menu.entry(
         MenuItem::new(LocalizedString::new("Zoom In"))
             .hotkey(druid::RawMods::Ctrl, "+")
@@ -277,7 +324,6 @@ fn build_menu<T: Data>() -> Menu<T> {
     );
     view_menu = view_menu.entry(
         MenuItem::new(LocalizedString::new("Toggle Output Panel"))
-            .hotkey(druid::RawMods::Ctrl, "`")
     );
     menu = menu.entry(view_menu);
     
@@ -285,17 +331,11 @@ fn build_menu<T: Data>() -> Menu<T> {
     let mut run_menu = Menu::new(LocalizedString::new("Run"));
     run_menu = run_menu.entry(
         MenuItem::new(LocalizedString::new("Run Program"))
-            .hotkey(druid::RawMods::None, druid::KbKey::F5.into())
     );
     run_menu = run_menu.entry(
         MenuItem::new(LocalizedString::new("Debug Program"))
-            .hotkey(druid::RawMods::Shift, druid::KbKey::F5.into())
     );
     run_menu = run_menu.separator();
-    run_menu = run_menu.entry(
-        MenuItem::new(LocalizedString::new("Stop Execution"))
-            .hotkey(druid::RawMods::Shift, druid::KbKey::F5.into())
-    );
     run_menu = run_menu.entry(
         MenuItem::new(LocalizedString::new("Generate Code"))
             .hotkey(druid::RawMods::CtrlShift, "g")
@@ -306,7 +346,6 @@ fn build_menu<T: Data>() -> Menu<T> {
     let mut help_menu = Menu::new(LocalizedString::new("Help"));
     help_menu = help_menu.entry(
         MenuItem::new(LocalizedString::new("Documentation"))
-            .hotkey(druid::RawMods::Ctrl, "d")
     );
     help_menu = help_menu.entry(
         MenuItem::new(LocalizedString::new("Keyboard Shortcuts"))
@@ -328,8 +367,8 @@ fn main() -> Result<(), PlatformError> {
     // Create main window
     let main_window = WindowDesc::new(build_ui())
         .title("6IDE7 - Visual Programming IDE")
-        .window_size(Size::new(1280.0, 800.0))
-        .with_min_size(Size::new(800.0, 600.0))
+        .window_size(Size::new(1400.0, 900.0))
+        .with_min_size(Size::new(900.0, 600.0))
         .menu(build_menu)
         .show_titlebar(true)
         .resizable(true);
