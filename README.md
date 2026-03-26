@@ -21,11 +21,13 @@
 ## Ключевые особенности
 
 - 🎨 **Современный GUI на Druid** — отзывчивый и эстетичный интерфейс
-- 🎯 **Визуальное программирование** — создание программ из готовых блоков
+- 🖱️ **Drag-and-Drop** — перетаскивание блоков из библиотеки на холст
+- 🔗 **Система соединений** — визуальное связывание блоков с проверкой типов
+- ✅ **Валидация типов** — проверка совместимости портов при соединении
 - ⚡ **Высокая производительность** — реализация на Rust
+- 🔄 **Undo/Redo** — история изменений с возможностью отката
 - 🔄 **Генерация кода** — автоматическое создание кода на Python, JavaScript, TypeScript, Rust, C++
 - 🔌 **Расширяемость** — система плагинов для добавления новых блоков
-- 📦 **Импорт кода** — преобразование существующего кода в визуальное представление
 - 🖥️ **Кроссплатформенность** — Windows, macOS, Linux
 
 ## Скриншоты интерфейса
@@ -76,9 +78,37 @@
 |-----------|----------|
 | **Canvas** | Рабочая область для размещения и соединения блоков с поддержкой zoom/pan |
 | **Toolbar** | Панель инструментов с выбором инструментов и действиями проекта |
-| **Sidebar** | Боковая панель с библиотекой блоков и структурой проекта |
+| **Sidebar** | Боковая панель с библиотекой 30+ блоков и структурой проекта |
 | **Output Panel** | Панель вывода с вкладками Output/Problems/Terminal |
 | **Settings Dialog** | Диалог настроек с разделами Editor/CodeGen/Appearance/Keybindings |
+| **Connection Graph** | Граф соединений с поиском циклов и топологической сортировкой |
+| **Type System** | Система типов с проверкой совместимости портов |
+
+## Система блоков
+
+### Типы данных портов
+
+| Тип | Описание | Цвет |
+|-----|----------|------|
+| Integer | Целое число | Синий |
+| Float | Вещественное число | Синий |
+| String | Строка | Зелёный |
+| Boolean | Логическое значение | Янтарный |
+| Array | Массив | Розовый |
+| Function | Функция | Фиолетовый |
+| Control Flow | Поток выполнения | Янтарный |
+| Any | Любой тип | Серый |
+
+### Категории блоков (30+ блоков)
+
+| Категория | Блоки |
+|-----------|-------|
+| **I/O** | Print, Input, Read File, Write File |
+| **Data** | Variable, Constant, Array, Get Item |
+| **Control** | If, For Loop, While Loop, For Each, Break, Continue |
+| **Functions** | Function, Call, Return |
+| **Math** | Add, Subtract, Multiply, Divide, Modulo, Power, Compare, Greater, Less, And, Or, Not |
+| **Strings** | Concat, Format, Split, Join, Length |
 
 ## Начало работы
 
@@ -116,12 +146,15 @@ cargo run --release
 │       ├── src/
 │       │   ├── lib.rs      # Module exports
 │       │   ├── theme.rs    # Color theme & styling
-│       │   ├── canvas.rs   # Block workspace
+│       │   ├── canvas.rs   # Block workspace with drag-and-drop
 │       │   ├── toolbar.rs  # Top toolbar
-│       │   ├── sidebar.rs  # Block library
+│       │   ├── sidebar.rs  # Block library with drag support
 │       │   ├── output.rs   # Output console
 │       │   ├── settings.rs # Settings dialog
-│       │   ├── blocks.rs   # Block data models
+│       │   ├── blocks.rs   # Block definitions (30+ blocks)
+│       │   ├── types.rs    # Type system & port specifications
+│       │   ├── graph.rs    # Connection graph management
+│       │   ├── history.rs  # Undo/Redo system
 │       │   └── widgets/    # Reusable widgets
 │       └── Cargo.toml
 ├── docs/                   # Documentation
@@ -173,9 +206,10 @@ cargo run --release
 | Фаза | Период | Цели |
 |------|--------|------|
 | ✅ Alpha 0.1 | Выполнено | Базовый GUI на Druid |
-| 🔄 Alpha 0.2 | В процессе | Drag-and-drop блоков |
-| ⏳ Beta | Планируется | Все категории блоков, генерация кода |
-| ⏳ RC | Планируется | Плагины, импорт кода, отладка |
+| ✅ Alpha 0.2 | Выполнено | Drag-and-drop, система соединений, типы данных |
+| 🔄 Alpha 0.3 | В процессе | Генерация кода Python/JS |
+| ⏳ Beta | Планируется | Все функции, плагины |
+| ⏳ RC | Планируется | Импорт кода, отладка |
 | ⏳ Release | Планируется | Документация, тестирование, релиз 1.0 |
 
 ## Вклад в проект
