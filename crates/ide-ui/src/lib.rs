@@ -13,6 +13,9 @@ pub mod output;
 pub mod sidebar;
 pub mod settings;
 pub mod blocks;
+pub mod codegen;
+pub mod execution;
+pub mod code_preview;
 
 pub use theme::*;
 pub use types::*;
@@ -25,3 +28,6 @@ pub use output::*;
 pub use sidebar::*;
 pub use settings::*;
 pub use blocks::*;
+pub use codegen::*;
+pub use execution::*;
+pub use code_preview::*;
