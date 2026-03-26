@@ -1,0 +1,13 @@
+[package]
+name = "ide-ui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+druid.workspace = true
+im.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+once_cell.workspace = true

@@ -1,0 +1,16 @@
+[package]
+name = "ide-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+ide-ui = { path = "../ide-ui" }
+
+druid.workspace = true
+im.workspace = true
+serde.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true

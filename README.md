@@ -7,6 +7,7 @@
 *Создавайте приложения методом перетаскивания блоков кода*
 
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
+[![Druid](https://img.shields.io/badge/GUI-Druid-blue.svg)](https://github.com/linebender/druid)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 </div>
@@ -19,12 +20,37 @@
 
 ## Ключевые особенности
 
+- 🎨 **Современный GUI на Druid** — отзывчивый и эстетичный интерфейс
 - 🎯 **Визуальное программирование** — создание программ из готовых блоков
 - ⚡ **Высокая производительность** — реализация на Rust
 - 🔄 **Генерация кода** — автоматическое создание кода на Python, JavaScript, TypeScript, Rust, C++
 - 🔌 **Расширяемость** — система плагинов для добавления новых блоков
 - 📦 **Импорт кода** — преобразование существующего кода в визуальное представление
 - 🖥️ **Кроссплатформенность** — Windows, macOS, Linux
+
+## Скриншоты интерфейса
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  ● Untitled Project  │  ⟷  ✋  ⤫  ✕  │     ▶ Run  ⚙ Settings  💾 Save │
+├─────────────┬───────────────────────────────────────────────────────┤
+│ ◨ Blocks    │                                                       │
+│ ▼ I/O       │     ┌──────────────┐                                  │
+│   • Print   │     │   Print      │                                  │
+│   • Read    │     │  ○ value     │                                  │
+│ ▼ Data      │     └──────────────┘                                  │
+│   • Variable│            │                                          │
+│   • Constant│     ┌──────▼─────────┐                                 │
+│ ▶ Control   │     │     Add        │                                 │
+│ ▶ Functions │     │  ○ a    result ○│                                │
+│ ▶ Math      │     │  ○ b           │                                 │
+│ ▶ Strings   │     └────────────────┘                                 │
+├─────────────┴───────────────────────────────────────────────────────┤
+│ Output │ Problems │ Terminal                                        │
+│ ℹ 6IDE7 Output Console                                               │
+│ ℹ Ready to run your program...                                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ## Архитектура
 
@@ -44,16 +70,24 @@
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Компоненты системы
+## Компоненты GUI
 
 | Компонент | Описание |
 |-----------|----------|
-| **Редактор блоков** | Визуальный редактор с drag-and-drop интерфейсом |
-| **Менеджер блоков** | Хранилище и управление библиотекой блоков |
-| **Генератор кода** | Преобразование визуальной схемы в исходный код |
-| **Модуль интеграции** | Работа с языками, пакетами и отладка |
+| **Canvas** | Рабочая область для размещения и соединения блоков с поддержкой zoom/pan |
+| **Toolbar** | Панель инструментов с выбором инструментов и действиями проекта |
+| **Sidebar** | Боковая панель с библиотекой блоков и структурой проекта |
+| **Output Panel** | Панель вывода с вкладками Output/Problems/Terminal |
+| **Settings Dialog** | Диалог настроек с разделами Editor/CodeGen/Appearance/Keybindings |
 
 ## Начало работы
+
+### Требования
+
+- Rust 1.75 или выше
+- Cargo
+
+### Сборка
 
 ```bash
 # Клонирование репозитория
@@ -63,11 +97,67 @@ git clone https://github.com/vfyov6621-coder/6IDE7.git
 cd 6IDE7
 
 # Сборка проекта
-cargo build
+cargo build --release
 
 # Запуск
-cargo run
+cargo run --release
 ```
+
+### Структура проекта
+
+```
+6IDE7/
+├── Cargo.toml              # Workspace configuration
+├── crates/
+│   ├── ide-app/            # Main application
+│   │   ├── src/main.rs     # Entry point
+│   │   └── Cargo.toml
+│   └── ide-ui/             # UI components
+│       ├── src/
+│       │   ├── lib.rs      # Module exports
+│       │   ├── theme.rs    # Color theme & styling
+│       │   ├── canvas.rs   # Block workspace
+│       │   ├── toolbar.rs  # Top toolbar
+│       │   ├── sidebar.rs  # Block library
+│       │   ├── output.rs   # Output console
+│       │   ├── settings.rs # Settings dialog
+│       │   ├── blocks.rs   # Block data models
+│       │   └── widgets/    # Reusable widgets
+│       └── Cargo.toml
+├── docs/                   # Documentation
+└── assets/                 # Icons and resources
+```
+
+## Горячие клавиши
+
+| Действие | Горячие клавиши |
+|----------|-----------------|
+| Save | Ctrl+S |
+| Undo | Ctrl+Z |
+| Redo | Ctrl+Y |
+| Delete | Del |
+| Select Tool | V |
+| Pan Tool | H |
+| Connect Tool | C |
+| Run Program | F5 |
+| Toggle Grid | Ctrl+G |
+| Zoom In | Ctrl++ |
+| Zoom Out | Ctrl+- |
+
+## Тема оформления
+
+6IDE7 использует современную тёмную тему с цветовой палитрой:
+
+| Элемент | Цвет |
+|---------|------|
+| Background | `#1e1e2e` |
+| Surface | `#25253a` |
+| Accent | `#7c3aed` (Purple) |
+| I/O Blocks | `#3b82f6` (Blue) |
+| Data Blocks | `#22c55e` (Green) |
+| Control Blocks | `#f59e0b` (Amber) |
+| Function Blocks | `#a855f7` (Purple) |
+| Math Blocks | `#ec4899` (Pink) |
 
 ## Документация
 
@@ -76,7 +166,17 @@ cargo run
 
 ## Статус проекта
 
-🚧 **В разработке** — Проект находится на стадии проектирования и начальной реализации.
+🚧 **В разработке** — Проект находится на стадии реализации GUI.
+
+## Roadmap
+
+| Фаза | Период | Цели |
+|------|--------|------|
+| ✅ Alpha 0.1 | Выполнено | Базовый GUI на Druid |
+| 🔄 Alpha 0.2 | В процессе | Drag-and-drop блоков |
+| ⏳ Beta | Планируется | Все категории блоков, генерация кода |
+| ⏳ RC | Планируется | Плагины, импорт кода, отладка |
+| ⏳ Release | Планируется | Документация, тестирование, релиз 1.0 |
 
 ## Вклад в проект
 
@@ -89,5 +189,5 @@ MIT License
 ---
 
 <div align="center">
-Создано с ❤️ на Rust
+Создано с ❤️ на Rust с Druid
 </div>
